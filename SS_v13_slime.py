@@ -127,7 +127,7 @@ class Ant(object):
         sos_c=copy.deepcopy(sos)
         
         #set crossover thresold
-        #threshold=numpy.exp(-self.model.gen/50.0)
+        threshold=numpy.exp(-self.model.gen/50.0)
         
         #print 'pre',self.score_sos(sos_c)
         for sys,G in sos_c.iteritems():
@@ -145,8 +145,8 @@ class Ant(object):
             
             for u,v,d in g.edges_iter(data=True):
                 f=flowDict[u][v]
-                #num=numpy.random.uniform(0,1,1)
-                if f==0 : #and num>=threshold:
+                num=numpy.random.uniform(0,1,1)
+                if f==0 and num>=threshold:
                     g.remove_edge(u,v)
 #                else:
 #                    cap_index=next(x[0] for x in enumerate(sys_caps) if x[1] >= f)
@@ -167,7 +167,7 @@ class Ant(object):
         """ 
         sos_c=copy.deepcopy(sos)
         #set crossover thresold
-        #threshold=numpy.exp(-self.model.gen/50.0)        
+        threshold=numpy.exp(-self.model.gen/50.0)        
         
         #ebunch=[]
         for sys,g in sos_c.iteritems():
@@ -176,8 +176,8 @@ class Ant(object):
                 #print u,v,d
                 if d['capacity'] not in self.model.capacities[sys]:
                     print u,v,d,'error'
-                #num=numpy.random.uniform(0,1,1)
-                if ((v,u) not in g.edges()): #and num>=threshold:
+                num=numpy.random.uniform(0,1,1)
+                if ((v,u) not in g.edges()) and num>=threshold:
                     g.add_edge(v,u,capacity=int(d['capacity']))
                     #ebunch.append((v,u,d['capacity']))
                     #ebunch.append((v,u,self.model.capacities[sys][-1]))
@@ -227,7 +227,7 @@ class Ant(object):
 #            print sys,key,col,t,dec
 
         
-        factor=self.model.dissipation
+        #factor=self.model.dissipation
         #remove for paper
         p[sys][key][col][0][t][dec]*=1.0 #(1.0-factor)
         p[sys][key][col][1][t][dec]*=1.0 #(1.0-factor)
@@ -260,7 +260,7 @@ class Ant(object):
         p=copy.deepcopy(self.model.p)
                 
         
-        d=nx.diameter(self.model.spatial)
+        #d=nx.diameter(self.model.spatial)
         
         
         #initialize start of random walk
@@ -721,15 +721,28 @@ class Ant(object):
         
         #Survivability
         results=[]
-        for i in xrange(self.model.tests):
+        
+        #get results for combinations
+        target_list=itertools.combinations(self.model.spatial.nodes(),self.model.removals[1])        
+        for targets in target_list:
             sos_damage=copy.deepcopy(sos)
             #remove nodes due to damage
-            sos_damage=self.inflict_damage(sos_damage)
+            sos_damage=self.inflict_damage_target(sos_damage,targets)
             sat,operating=self.test_sos(sos_damage)
             working=sum(operating.itervalues())
             
             #trial score is fraction of working components
             results.append(float(working)/len(operating.keys()))
+            
+#        for i in xrange(self.model.tests):
+#            sos_damage=copy.deepcopy(sos)
+#            #remove nodes due to damage
+#            sos_damage=self.inflict_damage(sos_damage)
+#            sat,operating=self.test_sos(sos_damage)
+#            working=sum(operating.itervalues())
+            
+            #trial score is fraction of working components
+#            results.append(float(working)/len(operating.keys()))
         
         #Get vulnerability= 1-survivability        
         s_score=1.0-numpy.average(results)
@@ -769,20 +782,7 @@ class Ant(object):
                                                 n,
                                                 cutoff=self.model.removals[0])
             for t in path:
-                nodes_to_remove.update(path[t])
-#        
-#        for i in xrange(self.model.removals[0]):
-#            new=[]
-#            for n in nodes_to_remove:
-#                new.append(nx.neighbors(self.model.spatial,n))
-#            new=[item for sublist in new for item in sublist]    
-#            #print new
-#            nodes_to_remove.update(new)
-#            
-            
-            
-        #print 'final',nodes_to_remove
-                                                   
+                nodes_to_remove.update(path[t])                                                   
                                                    
         #Remove node in each system                       
         for sys,g in sos.iteritems():
@@ -793,7 +793,37 @@ class Ant(object):
                     
         return sos
         
+    def inflict_damage_target(self,sos,targets):
+        """
+        Removes nodes from sos.
+        targets are the nodes to be removed        
+        """
+        #print 'removed', nodes_to_remove
+        #Get radius
+        nodes_to_remove=set()
+        #print 'num', self.model.removals[0]
         
+        
+        nodes_to_remove.update(targets)
+        
+        #print nodes_to_remove
+        
+        for n in targets:
+            path=nx.single_source_shortest_path(self.model.spatial,
+                                                n,
+                                                cutoff=self.model.removals[0])
+            for t in path:
+                nodes_to_remove.update(path[t])                                                   
+                                                   
+        #Remove node in each system                       
+        for sys,g in sos.iteritems():
+            for n in nodes_to_remove:
+                
+                if n in g:
+                    g.remove_node(n)
+                    
+        return sos
+                
         
         
     def __repr__(self):
