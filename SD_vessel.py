@@ -6,8 +6,10 @@ Created on Tue Jan 12 11:20:46 2016
 """
 
 #from System_Structure_ACO import Space
-from SS_v13_slime import Space
-#from SS_v12_paper import Space
+#from SS_v15_slime_random import Space
+#from SS_v14_random import Space
+#from SS_v13_slime import Space
+from SS_v12_paper import Space
 #from SS_v11_damage import Space
 #from SS_v10_loop_prevention import Space
 #from SS_v8_minmax import Space
@@ -90,7 +92,7 @@ r=(1,1)
 a=1.0
 b=0.0
 ini_p=1.0
-diss=0.1
+diss=0.3
 keep=1
 f_size=9
 
@@ -121,7 +123,7 @@ space=Space(n_col=n_c,
 #cycle - 1000
 count=0
 print 'Generations: (generation, convergence criteria, # of failures, # of cycles, # of steps)'
-while (space.convergence<30) and (count<50): #
+while (space.convergence<30) and (count<150): #
     space.step()
     print '(gen: {}, con: {}, f: {}, cyc: {}, t: {}, s: {}, e: {}),'.format(count,
                                     space.convergence,space.failure,
@@ -133,7 +135,7 @@ while (space.convergence<30) and (count<50): #
 print ''
 space.vizualize_c_f()    
 space.vizualize_pf()
-space.vizualize_systems()
+#space.vizualize_systems()
         
 
 
