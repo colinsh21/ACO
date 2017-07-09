@@ -127,7 +127,10 @@ class Ant(object):
         sos_c=copy.deepcopy(sos)
         
         #set crossover thresold
-        threshold=numpy.exp(-self.model.gen/50.0)
+        #threshold=numpy.exp(-self.model.gen/((self.model.max_steps/4.0)))
+        
+        #random        
+        threshold=numpy.random.uniform(0,1,1)
         
         #print 'pre',self.score_sos(sos_c)
         for sys,G in sos_c.iteritems():
@@ -139,7 +142,7 @@ class Ant(object):
             flowCost, flowDict = nx.capacity_scaling(g,weight=3)
             
             #use flow to get a min cost network
-            # sys_caps=list(self.model.capacities[sys])
+            sys_caps=list(self.model.capacities[sys])
             #print sys,sys_caps
             #remove_bunch=[]
             
@@ -148,9 +151,9 @@ class Ant(object):
                 num=numpy.random.uniform(0,1,1)
                 if f==0 and num>=threshold:
                     g.remove_edge(u,v)
-#                else:
-#                    cap_index=next(x[0] for x in enumerate(sys_caps) if x[1] >= f)
-#                    g[u][v]['capacity']=sys_caps[cap_index]
+                else:
+                    cap_index=next(x[0] for x in enumerate(sys_caps) if x[1] >= f)
+                    g[u][v]['capacity']=sys_caps[cap_index]
             g=nx.relabel_nodes(g,name_map)
             s,t=self.get_s_t(sys) 
             g=self.prune_graph(g,t,s)
@@ -167,7 +170,10 @@ class Ant(object):
         """ 
         sos_c=copy.deepcopy(sos)
         #set crossover thresold
-        threshold=numpy.exp(-self.model.gen/50.0)        
+        #threshold=numpy.exp(-self.model.gen/((self.model.max_steps/4.0)))       
+        
+        #Random crossover
+        threshold=numpy.random.uniform(0,1,1)
         
         #ebunch=[]
         for sys,g in sos_c.iteritems():
@@ -226,11 +232,15 @@ class Ant(object):
 #            print p[sys][(1,1,0)][col][0][t]            
 #            print sys,key,col,t,dec
 
-        
-        factor=self.model.dissipation
+        epsilon=.000000
+        factor=1.0#self.model.dissipation
         #remove for paper
-        p[sys][key][col][0][t][dec]*=1.0 #(1.0-factor)
-        p[sys][key][col][1][t][dec]*=1.0 #(1.0-factor)
+        p[sys][key][col][0][t][dec]*=(1.0-factor)
+        if p[sys][key][col][0][t][dec]<epsilon:
+            p[sys][key][col][0][t][dec]=epsilon
+        p[sys][key][col][1][t][dec]*=(1.0-factor)
+        if p[sys][key][col][1][t][dec]<epsilon:
+            p[sys][key][col][1][t][dec]=epsilon
         
         return p
         
@@ -596,7 +606,11 @@ class Ant(object):
         Return decision index, based on pheromone list.
         """
         #convert pheromones to percentage
-        percent_list = [float(i)/sum(pheromone_list) for i in pheromone_list]   
+        p_sum=sum(pheromone_list)
+        if p_sum == 0:
+            percent_list = [1.0/len(pheromone_list) for i in pheromone_list]
+        else:
+            percent_list = [float(i)/sum(pheromone_list) for i in pheromone_list]  
         cumulative_percent=numpy.cumsum(percent_list)
 
         #Choose decision index
@@ -892,6 +906,7 @@ class Space(object):
                  alpha=1.0,beta=1.0,
                  initial_pheromone=.5,dissipation=.2,
                  keep_best=0,
+                 max_steps=10,
                  figure_size=7):
         """
         Class constructor.
@@ -949,6 +964,7 @@ class Space(object):
         self.convergence=0
         self.failure=0
         self.cycle=0
+        self.max_steps=max_steps
         self.fail_list=[]
         self.cycle_list=[]
         self.t_step_list=[]
@@ -1260,8 +1276,8 @@ class Space(object):
                             for i in xrange(len(self.p[sys][e][col][obj][y])):
                                 self.p[sys][e][col][obj][y][i]*=\
                                     (1.0-self.dissipation)
-                                if self.p[sys][e][col][obj][y][i]<0.01:
-                                    self.p[sys][e][col][obj][y][i]=0.01
+#                                if self.p[sys][e][col][obj][y][i]<0.01:
+#                                    self.p[sys][e][col][obj][y][i]=0.01
                                 
             
         
@@ -1387,7 +1403,9 @@ class Space(object):
         
         #Convergence check
         if len(self.pareto_history)>2:
-            if self.pareto_history[-1]==self.pareto_history[-2]:
+            p_1=set(self.pareto_history[-1])
+            p_2=set(self.pareto_history[-2])
+            if p_1==p_2:
                 self.convergence+=1
             else:
                 self.convergence=0
