@@ -127,7 +127,7 @@ class Ant(object):
         sos_c=copy.deepcopy(sos)
         
         #set crossover thresold
-        threshold=numpy.exp(-self.model.gen/50.0)
+        threshold=numpy.exp(-self.model.gen/(self.model.max_steps/1.0))
         
         #print 'pre',self.score_sos(sos_c)
         for sys,G in sos_c.iteritems():
@@ -167,7 +167,7 @@ class Ant(object):
         """ 
         sos_c=copy.deepcopy(sos)
         #set crossover thresold
-        threshold=numpy.exp(-self.model.gen/50.0)        
+        threshold=numpy.exp(-self.model.gen/(self.model.max_steps/1.0))        
         
         #ebunch=[]
         for sys,g in sos_c.iteritems():
@@ -863,6 +863,7 @@ class Space(object):
                  alpha=1.0,beta=1.0,
                  initial_pheromone=.5,dissipation=.2,
                  keep_best=0,
+                 max_steps=10,
                  figure_size=7):
         """
         Class constructor.
@@ -920,6 +921,7 @@ class Space(object):
         self.convergence=0
         self.failure=0
         self.cycle=0
+        self.max_steps=max_steps
         self.fail_list=[]
         self.cycle_list=[]
         self.t_step_list=[]
@@ -1231,8 +1233,8 @@ class Space(object):
                             for i in xrange(len(self.p[sys][e][col][obj][y])):
                                 self.p[sys][e][col][obj][y][i]*=\
                                     (1.0-self.dissipation)
-                                if self.p[sys][e][col][obj][y][i]<0.01:
-                                    self.p[sys][e][col][obj][y][i]=0.01
+#                                if self.p[sys][e][col][obj][y][i]<0.01:
+#                                    self.p[sys][e][col][obj][y][i]=0.01
                                 
             
         
