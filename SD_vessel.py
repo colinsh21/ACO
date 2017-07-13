@@ -92,7 +92,7 @@ r=(1,1)
 a=1.0
 b=0.0
 ini_p=1.0
-diss=0.3
+diss=0.2
 keep=1
 f_size=9
 
@@ -123,7 +123,7 @@ space=Space(n_col=n_c,
 #cycle - 1000
 count=0
 print 'Generations: (generation, convergence criteria, # of failures, # of cycles, # of steps)'
-while (space.convergence<30) and (count<150): #
+while (space.convergence<20) and (count<3000): #
     space.step()
     print '(gen: {}, con: {}, f: {}, cyc: {}, t: {}, s: {}, e: {}),'.format(count,
                                     space.convergence,space.failure,
